@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>통합과학2 에너지 60제 - 완벽 암기 테스트</title>
+    <style>
+        :root { --p: #2c3e50; --s: #3498db; --ok: #27ae60; --ng: #e74c3c; --light: #f4f7f6; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: var(--light); padding: 10px; line-height: 1.6; margin: 0; }
+        .container { width: 100%; max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; border-bottom: 3px solid var(--p); padding-bottom: 10px; font-size: 1.3rem; color: var(--p); }
+        .result-summary { display: none; background: white; border: 2px solid var(--p); padding: 20px; border-radius: 10px; margin-bottom: 25px; text-align: center; position: sticky; top: 10px; z-index: 1001; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .wrong-list { color: var(--ng); font-weight: bold; margin-top: 10px; font-size: 1.1rem; word-break: break-all; }
+        .q-card { border: 1px solid #eee; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fff; }
+        .q-title { font-weight: bold; color: var(--p); margin-bottom: 12px; display: block; word-break: keep-all; }
+        .options { list-style: none; padding: 0; }
+        .options li { margin: 10px 0; display: flex; align-items: flex-start; background: #fafafa; padding: 12px; border-radius: 6px; cursor: pointer; border: 1px solid #eee; }
+        .options input { margin-top: 4px; margin-right: 12px; transform: scale(1.3); flex-shrink: 0; }
+        #submit-btn { position: fixed; bottom: 25px; right: 25px; padding: 15px 30px; background: var(--p); color: white; border: none; border-radius: 50px; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 2000; font-weight: bold; }
+        .ans-box { display: none; margin-top: 10px; padding: 12px; background: #eef7ff; border-left: 5px solid var(--s); border-radius: 4px; font-size: 0.95rem; }
+        .correct-card { border: 2px solid var(--ok) !important; background: #f0fff4 !important; }
+        .wrong-card { border: 2px solid var(--ng) !important; background: #fff5f5 !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>통합과학2: 발전 및 신재생 에너지 60제</h1>
+    <div id="result-area" class="result-summary">
+        <div style="font-size: 1.5rem; font-weight: bold;">최종 점수: <span id="score-val">0</span> / 60</div>
+        <div id="wrong-container" style="margin-top:15px;">
+            <div style="color:#555;">틀린 문항 번호:</div>
+            <div id="wrong-numbers" class="wrong-list"></div>
+        </div>
+        <button onclick="location.reload()" style="margin-top:15px; padding:8px 16px; cursor:pointer;">다시 풀기</button>
+    </div>
+    <form id="quiz-form"><div id="questions"></div></form>
+</div>
+<button id="submit-btn" onclick="checkAnswers()">제출 및 채점</button>
+
+<script>
+const data = [
+    // 1-25: 기존 객관식 및 단답형 변환
+    { q: "화력 발전소의 장점을 모두 고르시오.", o: ["경제적 비용", "빠른 출력 조절", "기술 축적으로 유지보수 용이", "지리적 제약이 적음"], a: [0, 1, 2, 3] },
+    { q: "핵발전소의 단점을 모두 고르시오.", o: ["탄소 배출 과다", "방사성 물질 유출 위험", "자연재해 취약", "방사성 폐기물 처리 곤란"], a: [1, 2, 3] },
+    { q: "화력과 핵발전의 공통된 특징을 모두 고르시오.", o: ["증기 생성 및 터빈 회전", "연소 부산물 발생", "열 손실(에너지 손실) 발생", "냉각수 필요"], a: [0, 2, 3] },
+    { q: "핵발전의 장점을 모두 고르시오.", o: ["대규모 전력 공급 유리", "연료 절약 및 효율성", "이산화 탄소 배출 거의 없음", "폐기물 처리 용이성"], a: [0, 1, 2] },
+    { q: "신에너지(New)에 해당하는 것을 모두 고르시오.", o: ["연료 전지", "지열", "수소 에너지", "석탄 액화 및 가스화"], a: [0, 2, 3] },
+    { q: "재생 에너지(Renewable)를 모두 고르시오.", o: ["태양광/태양열", "파력/조력", "수력/풍력", "폐기물/지열"], a: [0, 1, 2, 3] },
+    { q: "태양 에너지 방식의 특징을 모두 고르시오.", o: ["태양열은 증기로 터빈 회전", "태양광은 광전효과 이용", "태양광은 터빈 없음", "둘 다 전자기 유도 이용"], a: [0, 1, 2] },
+    { q: "해양 에너지에 대한 설명을 모두 고르시오.", o: ["조력은 해수면 높이차 이용", "파력은 파도의 상하/좌우 운동 이용", "둘 다 터빈 회전 필요", "파력은 밀물과 썰물 이용"], a: [0, 1, 2] },
+    { q: "석탄의 액화 및 가스화 특징을 모두 고르시오.", o: ["고급 액체 연료로 전환", "가스 터빈/증기 터빈 사용", "재생 에너지로 분류", "이용 효율 향상"], a: [0, 1, 3] },
+    { q: "바이오/폐기물 에너지의 특징을 모두 고르시오.", o: ["유기물 이용(바이오)", "소각열 이용(폐기물)", "매립장 가스 이용(공통)", "신에너지로 분류"], a: [0, 1, 2] },
+    { q: "화력 발전의 단점을 모두 고르시오.", o: ["탄소 발생 및 온난화", "화석 연료 고갈 위험", "열 손실 발생", "연료 가격 변동 리스크"], a: [0, 1, 2, 3] },
+    { q: "핵발전의 경제성 및 특징을 모두 고르시오.", o: ["비경제적(건설/운영)", "대규모 공급 유리", "자연재해 취약", "탄소 배출 많음"], a: [0, 1, 2] },
+    { q: "신에너지의 정의에 포함되는 내용을 모두 고르시오.", o: ["기존 화석 연료 변환", "수소 에너지 포함", "지열 에너지 포함", "연료 전지 포함"], a: [0, 1, 3] },
+    { q: "재생 에너지 자원을 모두 고르시오.", o: ["햇빛", "바다", "바람", "우라늄"], a: [0, 1, 2] },
+    { q: "풍력 발전의 특징을 모두 고르시오.", o: ["운동 에너지 이용", "터빈 회전", "재생 에너지", "빛에너지 이용"], a: [0, 1, 2] },
+    { q: "수력 발전의 에너지원을 모두 고르시오.", o: ["위치 에너지", "운동 에너지", "화학 에너지", "핵 에너지"], a: [0, 1] },
+    { q: "지열 발전에 대한 설명을 모두 고르시오.", o: ["뜨거운 물/수증기 이용", "터빈 회전", "재생 에너지", "마그마 직접 이용"], a: [0, 1, 2] },
+    { q: "바이오 에너지 원료를 모두 고르시오.", o: ["농작물", "목재", "해조류", "플라스틱"], a: [0, 1, 2] },
+    { q: "폐기물 에너지 이용법을 모두 고르시오.", o: ["매립장 가스", "소각열", "재생 에너지 분류", "신에너지 분류"], a: [0, 1, 2] },
+    { q: "연료 전지의 특징을 모두 고르시오.", o: ["화학 에너지를 전기로 직접 전환", "수소 사용", "신에너지", "전자기 유도"], a: [0, 1, 2] },
+    { q: "터빈 회전이 필요한 발전 방식을 모두 고르시오.", o: ["화력/핵발전", "풍력/수력", "지열/태양열", "태양광/연료전지"], a: [0, 1, 2] },
+    { q: "터빈 회전이 필요 없는 발전 방식을 모두 고르시오.", o: ["태양광", "연료 전지", "지열", "조력"], a: [0, 1] },
+    { q: "비경제적(비용) 단점이 언급된 방식은?", o: ["핵발전", "신재생 에너지", "화력 발전", "수력 발전"], a: [0, 1] },
+    { q: "지리적 제약이 장단점으로 언급된 것은?", o: ["화력(제약 적음)", "신재생(자연 환경 영향)", "핵발전(제약 없음)", "수소(제약 큼)"], a: [0, 1] },
+    { q: "연료 고갈 위험이 있는 방식을 모두 고르시오.", o: ["화력 발전", "핵발전", "지열 에너지", "태양 에너지"], a: [0, 1] },
+
+    // 26-50: 단답형 기반 다중 정답 변환
+    { q: "화력 발전의 기술적 특징은?", o: ["기술 축적", "설계/유지보수 용이", "효율 100%", "빠른 대처"], a: [0, 1, 3] },
+    { q: "화력 발전의 환경 및 비용 단점은?", o: ["이산화 탄소", "지구 온난화", "가격 변동", "열 손실"], a: [0, 1, 2, 3] },
+    { q: "핵발전의 장점 키워드를 모두 고르시오.", o: ["대규모", "적은 연료", "이산화 탄소 거의 없음", "폐기물 무해"], a: [0, 1, 2] },
+    { q: "핵발전의 치명적 단점을 모두 고르시오.", o: ["방사성 폐기물", "비경제적", "자연재해 취약", "탄소 배출"], a: [0, 1, 2] },
+    { q: "신에너지의 핵심 키워드는?", o: ["화석 연료 변환", "수소", "연료 전지", "바람"], a: [0, 1, 2] },
+    { q: "재생 에너지의 핵심 키워드는?", o: ["햇빛", "바다", "바람", "수소"], a: [0, 1, 2] },
+    { q: "수소 에너지와 연료 전지의 특징은?", o: ["수소 연소", "화학 에너지를 전기로 직접 전환", "신에너지", "빛에너지 이용"], a: [0, 1, 2] },
+    { q: "석탄 이용 기술의 특징은?", o: ["액화(액체 연료)", "가스화(터빈 구동)", "효율 향상", "재생 에너지"], a: [0, 1, 2] },
+    { q: "태양 에너지의 두 가지 방식 차이는?", o: ["광전효과(태양광)", "열에너지(태양열)", "터빈 있음(태양열)", "터빈 있음(태양광)"], a: [0, 1, 2] },
+    { q: "해양 에너지의 두 방식 특징은?", o: ["해수면 높이차(조력)", "상하/좌우 운동(파력)", "터빈 사용", "신에너지"], a: [0, 1, 2] },
+    { q: "지열 에너지의 특징은?", o: ["수증기/뜨거운 물", "재생 에너지", "터빈 사용", "화학 에너지"], a: [0, 1, 2] },
+    { q: "바이오 에너지 원료 키워드는?", o: ["농작물/목재", "해조류", "매립장 가스", "플라스틱"], a: [0, 1, 2] },
+    { q: "폐기물 에너지 특징은?", o: ["소각열", "매립장 가스", "재생 에너지", "핵분열"], a: [0, 1, 2] },
+    { q: "에너지 효율이 낮다고 언급된 방식은?", o: ["화력 발전", "핵발전", "태양광", "풍력"], a: [0] },
+    { q: "대규모 전력 공급에 유리한 방식은?", o: ["핵발전", "화력 발전", "태양광", "파력"], a: [0, 1] },
+    { q: "신재생 에너지의 공통 특징은?", o: ["지속 가능", "환경 친화", "초기 비용 높음", "지형 영향 받음"], a: [0, 1, 2, 3] },
+    { q: "전자기 유도(터빈)를 이용하는 것들을 고르시오.", o: ["풍력", "수력", "지열", "연료전지"], a: [0, 1, 2] },
+    { q: "화력 발전소의 입지 장점은?", o: ["지리적 제약 적음", "도시 근처 가능", "냉각수 불필요", "해안가 필수 아님"], a: [0, 1] },
+    { q: "태양광 발전의 장점은?", o: ["구조 간단", "유지보수 용이", "소음 적음", "밤에도 발전"], a: [0, 1, 2] },
+    { q: "수소의 특징은?", o: ["연소 시 물만 발생", "무한정 자원(물에서 추출)", "저장/운반 어려움", "탄소 배출 많음"], a: [0, 1, 2] },
+    { q: "풍력 발전의 설치 조건은?", o: ["바람 일정", "지형적 제약 있음", "해안/산간 유리", "주택가 밀집 지역"], a: [0, 1, 2] },
+    { q: "지열 발전의 조건은?", o: ["화산 지대 유리", "국내 활발", "24시간 발전 가능", "날씨 영향 적음"], a: [0, 2, 3] },
+    { q: "조력 발전의 단점은?", o: ["설치비 비쌈", "갯벌 파괴 등 환경 영향", "지형 제약 큼", "에너지 고갈"], a: [0, 1, 2] },
+    { q: "연료 전지의 장점은?", o: ["효율 높음", "친환경", "분산 발전 가능", "가격 저렴"], a: [0, 1, 2] },
+    { q: "발전 방식과 에너지원의 연결이 옳은 것은?", o: ["화력-화석 연료", "핵-우라늄", "수력-물", "지열-마그마/수증기"], a: [0, 1, 2, 3] },
+
+    // 51-60: 서술형 심화 복습
+    { q: "화력 발전의 특징 4가지를 모두 고르시오.", o: ["경제적 비용", "수요 대응 빠름", "기술 축적", "지리적 제약 적음"], a: [0, 1, 2, 3] },
+    { q: "화력 발전의 단점 4가지를 모두 고르시오.", o: ["탄소 배출", "고갈 위험", "열 손실", "연료 가격 변동"], a: [0, 1, 2, 3] },
+    { q: "핵발전의 장점 3가지를 모두 고르시오.", o: ["탄소 거의 없음", "대규모 유리", "적은 연료로 대량 생산", "폐기물 무해"], a: [0, 1, 2] },
+    { q: "핵발전의 단점 4가지를 모두 고르시오.", o: ["폐기물 곤란", "유출 위험", "비경제적", "자연재해 취약"], a: [0, 1, 2, 3] },
+    { q: "신에너지 정의의 핵심을 모두 고르시오.", o: ["화석 연료 변환", "수소/연료전지 포함", "재생 가능 에너지", "액화/가스화 포함"], a: [0, 1, 3] },
+    { q: "재생 에너지 정의의 핵심을 모두 고르시오.", o: ["햇빛/바다/바람", "재생 가능한 에너지", "기존 연료 변환", "지속 가능성"], a: [0, 1, 3] },
+    { q: "태양광 vs 태양열 차이를 모두 고르시오.", o: ["태양광은 빛에너지", "태양열은 열에너지", "태양열은 터빈 있음", "태양광은 광전효과"], a: [0, 1, 2, 3] },
+    { q: "조력 vs 파력 차이를 모두 고르시오.", o: ["조력은 높이차", "파력은 파도 운동", "조력은 터빈 없음", "파력은 터빈 있음"], a: [0, 1, 3] },
+    { q: "연료 전지 특징을 모두 고르시오.", o: ["화학->전기 직접 전환", "신에너지", "수소 사용", "증기 터빈 사용"], a: [0, 1, 2] },
+    { q: "바이오 에너지 특징을 모두 고르시오.", o: ["농작물/목재/해조류 이용", "매립지 가스 이용", "재생 에너지", "플라스틱 소각"], a: [0, 1, 2] }
+];
+
+const container = document.getElementById('questions');
+
+data.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'q-card';
+    div.id = `card-${i}`;
+    let content = `<span class="q-title">${i + 1}. ${item.q}</span>`;
+    content += `<ul class="options">`;
+    item.o.forEach((opt, oi) => {
+        content += `
+            <li onclick="const cb = document.getElementById('q${i}_${oi}'); cb.checked = !cb.checked;">
+                <input type="checkbox" name="q${i}" id="q${i}_${oi}" value="${oi}" onclick="event.stopPropagation();">
+                <label for="q${i}_${oi}">${oi + 1}) ${opt}</label>
+            </li>`;
+    });
+    content += `</ul><div id="ans${i}" class="ans-box">정답 번호: <b>${item.a.map(v=>v+1).join(', ')}</b></div>`;
+    div.innerHTML = content;
+    container.appendChild(div);
+});
+
+function checkAnswers() {
+    let score = 0;
+    let wrongs = [];
+    data.forEach((item, i) => {
+        const checked = Array.from(document.querySelectorAll(`input[name="q${i}"]:checked`)).map(el => parseInt(el.value));
+        const isCorrect = JSON.stringify(checked.sort()) === JSON.stringify(item.a.sort());
+        const card = document.getElementById(`card-${i}`);
+        const ansBox = document.getElementById(`ans${i}`);
+        ansBox.style.display = "block";
+        if (isCorrect) { score++; card.className = 'q-card correct-card'; } 
+        else { wrongs.push(i + 1); card.className = 'q-card wrong-card'; }
+    });
+    document.getElementById('result-area').style.display = 'block';
+    document.getElementById('score-val').innerText = score;
+    document.getElementById('wrong-numbers').innerText = wrongs.length > 0 ? wrongs.join(', ') : "없음! 완벽해요.";
+    window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
